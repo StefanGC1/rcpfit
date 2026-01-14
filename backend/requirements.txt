@@ -1,0 +1,10 @@
+fastapi[all]
+uvicorn[standard]
+sqlmodel
+asyncpg
+alembic
+python-jose[cryptography]
+bcrypt
+python-multipart
+psycopg2-binary
+pydantic-settings
