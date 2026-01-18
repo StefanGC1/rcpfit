@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
-from sqlmodel import select
+from sqlmodel import select, delete as sql_delete
 
 from app.api.deps import DbSession, CurrentUser
-from app.models import ExerciseDefinition
+from app.models import ExerciseDefinition, TemplateExercise, CompletedSet
 from app.schemas.exercise import ExerciseCreate, ExerciseRead, ExerciseUpdate
 
 router = APIRouter()
@@ -135,8 +135,8 @@ async def delete_exercise(
 ) -> None:
     """
     Delete an exercise definition.
-    Note: This will fail if the exercise has completed sets (foreign key constraint).
-    Consider soft delete in production.
+    This will also remove the exercise from any templates that use it.
+    Note: Completed sets referencing this exercise will also be deleted.
     """
     result = await session.execute(
         select(ExerciseDefinition).where(
@@ -151,5 +151,19 @@ async def delete_exercise(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Exercise not found",
         )
+    
+    # Delete related template_exercises first
+    await session.execute(
+        sql_delete(TemplateExercise).where(
+            TemplateExercise.exercise_definition_id == exercise_id
+        )
+    )
+    
+    # Delete related completed_sets
+    await session.execute(
+        sql_delete(CompletedSet).where(
+            CompletedSet.exercise_definition_id == exercise_id
+        )
+    )
     
     await session.delete(exercise)
