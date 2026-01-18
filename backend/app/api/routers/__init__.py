@@ -1,2 +1,2 @@
 # Routers package
-from . import auth, exercises, splits, templates
+from . import auth, exercises, splits, templates, workouts

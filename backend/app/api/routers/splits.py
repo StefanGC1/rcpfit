@@ -3,9 +3,10 @@ from sqlmodel import select
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import DbSession, CurrentUser
-from app.models import Split, Template
+from app.models import Split, Template, TemplateExercise
 from app.schemas.split import SplitCreate, SplitRead, SplitReadBasic, SplitUpdate
-from app.schemas.template import TemplateReadBasic
+from app.schemas.template import TemplateRead
+from app.schemas.exercise import ExerciseRead
 
 router = APIRouter()
 
@@ -52,11 +53,17 @@ async def get_split(
     session: DbSession,
 ) -> SplitRead:
     """
-    Get a specific split with its templates.
+    Get a specific split with its templates and their exercises.
     """
     result = await session.execute(
         select(Split)
-        .options(selectinload(Split.templates))
+        .options(
+            selectinload(Split.templates).selectinload(
+                Template.template_exercises
+            ).selectinload(
+                TemplateExercise.exercise_definition
+            )
+        )
         .where(Split.id == split_id, Split.user_id == current_user.id)
     )
     split = result.scalar_one_or_none()
@@ -67,17 +74,27 @@ async def get_split(
             detail="Split not found",
         )
     
-    # Build response with templates
-    templates = [
-        TemplateReadBasic(
-            id=t.id,
-            split_id=t.split_id,
-            name=t.name,
-            order=t.order,
-            created_at=t.created_at,
+    # Build response with templates and their exercises
+    templates = []
+    for t in sorted(split.templates, key=lambda x: x.order):
+        exercises = [
+            ExerciseRead(
+                id=te.exercise_definition.id,
+                name=te.exercise_definition.name,
+                created_at=te.exercise_definition.created_at,
+            )
+            for te in sorted(t.template_exercises, key=lambda x: x.order)
+        ]
+        templates.append(
+            TemplateRead(
+                id=t.id,
+                split_id=t.split_id,
+                name=t.name,
+                order=t.order,
+                created_at=t.created_at,
+                exercises=exercises,
+            )
         )
-        for t in sorted(split.templates, key=lambda x: x.order)
-    ]
     
     return SplitRead(
         id=split.id,

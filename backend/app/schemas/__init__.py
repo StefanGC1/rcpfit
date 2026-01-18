@@ -10,3 +10,15 @@ from .template import (
     TemplateExerciseRead,
     TemplateReorderExercises,
 )
+from .workout import (
+    SetData,
+    ExerciseData,
+    SessionData,
+    WorkoutStartRequest,
+    WorkoutDraftRead,
+    WorkoutDraftUpdate,
+    AddExerciseRequest,
+    CompletedSetRead,
+    CompletedSessionRead,
+    CompletedSessionBasic,
+)
