@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api.routers import auth, exercises, splits, templates, workouts
+from app.api.routers import auth, exercises, splits, templates, workouts, analytics
 
 app = FastAPI(title="Workout Tracker API")
 
@@ -27,6 +27,7 @@ app.include_router(exercises.router, prefix="/exercises", tags=["Exercises"])
 app.include_router(splits.router, prefix="/splits", tags=["Splits"])
 app.include_router(templates.router, prefix="/templates", tags=["Templates"])
 app.include_router(workouts.router, prefix="/workouts", tags=["Workouts"])
+app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 
 
 @app.get("/")
