@@ -6,11 +6,12 @@ from app.api.routers import auth, exercises, splits, templates, workouts, analyt
 
 app = FastAPI(title="Workout Tracker API")
 
-# CORS will be set up for Frontend -> Backend communication
-# when dev deployed on Vercel + Render
+# CORS configuration for Frontend -> Backend communication
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://rcpfit.vercel.app",
+    "https://rcpfit-roc5pwnxq-stefans-projects-4a280694.vercel.app",
 ]
 
 app.add_middleware(
