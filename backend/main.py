@@ -12,6 +12,7 @@ origins = [
     "http://127.0.0.1:5173",
     "https://rcpfit.vercel.app",
     "https://rcpfit-roc5pwnxq-stefans-projects-4a280694.vercel.app",
+    "https://1620ae6da7f2.ngrok-free.app",
 ]
 
 app.add_middleware(

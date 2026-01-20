@@ -15,7 +15,10 @@ async_engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,  # Set to True for debugging
     future=True,
-    connect_args={"ssl": ssl_context},
+    connect_args={
+        "ssl": ssl_context,
+        "statement_cache_size": 0
+    },
 )
 
 # Async session factory
