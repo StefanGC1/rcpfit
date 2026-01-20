@@ -1,14 +1,21 @@
 from typing import AsyncGenerator
+import ssl
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.core.config import settings
 
+# Create SSL context for asyncpg (required for Supabase)
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+
 # Async engine for the application
 async_engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=True,  # Set to False in production
+    echo=False,  # Set to True for debugging
     future=True,
+    connect_args={"ssl": ssl_context},
 )
 
 # Async session factory
