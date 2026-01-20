@@ -3,12 +3,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Pencil, Trash2, Loader2, Dumbbell } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  Dumbbell,
+  TrendingUp,
+  Calendar,
+  Trophy,
+  Target,
+  BarChart3,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 
 import { api } from "@/lib/api";
-import type { Exercise } from "@/types";
+import type { Exercise, ExerciseSummary, ExerciseSessionHistory } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +40,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
+import { ExerciseProgressChart } from "@/components/charts";
 
 // Validation schema for exercise form
 const exerciseSchema = z.object({
@@ -47,6 +59,7 @@ export default function ExercisesPage() {
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(
     null
   );
+  const [viewingExercise, setViewingExercise] = useState<Exercise | null>(null);
 
   // Fetch exercises
   const {
@@ -200,11 +213,21 @@ export default function ExercisesPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* View Stats button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewingExercise(exercise)}
+                    title="View Stats"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
                   {/* Edit button */}
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setEditingExercise(exercise)}
+                    title="Edit"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -213,6 +236,7 @@ export default function ExercisesPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setDeletingExercise(exercise)}
+                    title="Delete"
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -284,7 +308,168 @@ export default function ExercisesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Exercise Detail/Stats Dialog */}
+      <Dialog
+        open={viewingExercise !== null}
+        onOpenChange={(open) => !open && setViewingExercise(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          {viewingExercise && (
+            <ExerciseDetailView
+              exercise={viewingExercise}
+              onClose={() => setViewingExercise(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// Exercise Detail View Component
+interface ExerciseDetailViewProps {
+  exercise: Exercise;
+  onClose: () => void;
+}
+
+function ExerciseDetailView({ exercise }: ExerciseDetailViewProps) {
+  // Fetch exercise summary
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ["exercise-summary", exercise.id],
+    queryFn: async () => {
+      const response = await api.get<ExerciseSummary>(
+        `/analytics/exercise/${exercise.id}/summary`
+      );
+      return response.data;
+    },
+  });
+
+  // Fetch exercise history for chart
+  const { data: history, isLoading: historyLoading } = useQuery({
+    queryKey: ["exercise-history", exercise.id],
+    queryFn: async () => {
+      const response = await api.get<ExerciseSessionHistory[]>(
+        `/analytics/exercise/${exercise.id}/history`
+      );
+      return response.data;
+    },
+  });
+
+  const isLoading = summaryLoading || historyLoading;
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <Dumbbell className="h-5 w-5" />
+          {exercise.name}
+        </DialogTitle>
+        <DialogDescription>
+          Performance statistics and progress over time
+        </DialogDescription>
+      </DialogHeader>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Summary Stats */}
+          {summary && summary.total_sessions > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="text-center p-3 rounded-lg bg-muted/50">
+                  <div className="flex justify-center mb-1">
+                    <Target className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xl font-bold">{summary.total_sessions}</p>
+                  <p className="text-xs text-muted-foreground">Sessions</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted/50">
+                  <div className="flex justify-center mb-1">
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xl font-bold">{summary.total_sets}</p>
+                  <p className="text-xs text-muted-foreground">Total Sets</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted/50">
+                  <div className="flex justify-center mb-1">
+                    <Trophy className="h-4 w-4 text-yellow-500" />
+                  </div>
+                  <p className="text-xl font-bold">
+                    {summary.best_set_epley_score.toFixed(0)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Best Score</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted/50">
+                  <div className="flex justify-center mb-1">
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xl font-bold">
+                    {summary.average_session_score.toFixed(0)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Avg Score</p>
+                </div>
+              </div>
+
+              {/* Personal Best Info */}
+              <div className="rounded-lg border p-4">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-500" />
+                  Personal Best Set
+                </h4>
+                <p className="text-2xl font-bold">
+                  {summary.best_set_weight}kg × {summary.best_set_reps} reps
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Epley Score: {summary.best_set_epley_score.toFixed(1)}
+                </p>
+              </div>
+
+              {/* Last Performed */}
+              {summary.last_performed && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    Last performed:{" "}
+                    {new Date(summary.last_performed).toLocaleDateString(
+                      "en-US",
+                      {
+                        weekday: "long",
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }
+                    )}
+                  </span>
+                </div>
+              )}
+
+              {/* Progress Chart */}
+              {history && history.length > 0 && (
+                <ExerciseProgressChart
+                  data={history}
+                  exerciseName={exercise.name}
+                  title="Score Progress"
+                  height={250}
+                  showCard={false}
+                />
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Dumbbell className="h-12 w-12 mb-4" />
+              <p>No history for this exercise yet.</p>
+              <p className="text-sm">
+                Start logging sets to track your progress!
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 

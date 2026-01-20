@@ -9,6 +9,8 @@ from app.schemas.analytics import (
     ExerciseSessionHistory,
     ExerciseSummary,
     SetAnalytics,
+    SessionDetail,
+    SessionSetDetail,
 )
 
 router = APIRouter()
@@ -222,4 +224,63 @@ async def get_exercise_summary(
         best_set_epley_score=best_set.epley_score,
         average_session_score=average_session_score,
         last_performed=last_performed,
+    )
+
+
+@router.get("/sessions/{session_id}", response_model=SessionDetail)
+async def get_session_detail(
+    session_id: int,
+    current_user: CurrentUser,
+    session: DbSession,
+) -> SessionDetail:
+    """
+    Get detailed information about a specific completed session.
+    
+    Returns the session info along with all completed sets,
+    including exercise names for display.
+    """
+    # Fetch the session with template and sets
+    result = await session.execute(
+        select(CompletedSession)
+        .options(
+            selectinload(CompletedSession.template),
+            selectinload(CompletedSession.completed_sets).selectinload(
+                CompletedSet.exercise_definition
+            ),
+        )
+        .where(
+            CompletedSession.id == session_id,
+            CompletedSession.user_id == current_user.id,
+        )
+    )
+    completed_session = result.scalar_one_or_none()
+    
+    if not completed_session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found",
+        )
+    
+    # Build the sets list with exercise names
+    sets = [
+        SessionSetDetail(
+            id=s.id,
+            exercise_definition_id=s.exercise_definition_id,
+            exercise_name=s.exercise_definition.name,
+            set_number=s.set_number,
+            reps=s.reps,
+            weight=s.weight,
+            epley_score=s.epley_score,
+        )
+        for s in sorted(completed_session.completed_sets, key=lambda x: (x.exercise_definition_id, x.set_number))
+    ]
+    
+    return SessionDetail(
+        id=completed_session.id,
+        template_id=completed_session.template_id,
+        template_name=completed_session.template.name if completed_session.template else None,
+        started_at=completed_session.started_at,
+        completed_at=completed_session.completed_at,
+        session_score=completed_session.session_score,
+        sets=sets,
     )

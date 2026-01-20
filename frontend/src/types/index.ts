@@ -94,3 +94,72 @@ export interface CompletedSession {
   completed_at: string;
   session_score: number;
 }
+
+// Analytics types
+export interface SessionAnalytics {
+  id: number;
+  template_id: number | null;
+  template_name: string | null;
+  started_at: string;
+  completed_at: string;
+  session_score: number;
+}
+
+export interface SetAnalytics {
+  set_number: number;
+  reps: number;
+  weight: number;
+  epley_score: number;
+}
+
+export interface ExerciseSessionHistory {
+  session_id: number;
+  date: string;
+  total_score: number;
+  sets: SetAnalytics[];
+}
+
+export interface ExerciseSummary {
+  exercise_id: number;
+  exercise_name: string;
+  total_sessions: number;
+  total_sets: number;
+  total_volume: number;
+  best_set_weight: number;
+  best_set_reps: number;
+  best_set_epley_score: number;
+  average_session_score: number;
+  last_performed: string | null;
+}
+
+// Completed set for history display
+export interface CompletedSetWithExercise {
+  id: number;
+  exercise_definition_id: number;
+  exercise_name?: string;
+  set_number: number;
+  reps: number;
+  weight: number;
+  epley_score: number;
+}
+
+// Session detail with full set information
+export interface SessionSetDetail {
+  id: number;
+  exercise_definition_id: number;
+  exercise_name: string;
+  set_number: number;
+  reps: number;
+  weight: number;
+  epley_score: number;
+}
+
+export interface SessionDetail {
+  id: number;
+  template_id: number | null;
+  template_name: string | null;
+  started_at: string;
+  completed_at: string;
+  session_score: number;
+  sets: SessionSetDetail[];
+}

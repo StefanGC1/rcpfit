@@ -52,3 +52,31 @@ class ExerciseSummary(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SessionSetDetail(BaseModel):
+    """Schema for a completed set with exercise name."""
+    id: int
+    exercise_definition_id: int
+    exercise_name: str
+    set_number: int
+    reps: int
+    weight: float
+    epley_score: float
+
+    class Config:
+        from_attributes = True
+
+
+class SessionDetail(BaseModel):
+    """Schema for a completed session with full set details."""
+    id: int
+    template_id: int | None
+    template_name: str | None
+    started_at: datetime
+    completed_at: datetime
+    session_score: float
+    sets: list[SessionSetDetail]
+
+    class Config:
+        from_attributes = True
