@@ -7,7 +7,6 @@ import type {
   SessionAnalytics,
   Exercise,
   ExerciseSessionHistory,
-  Split,
   Template,
 } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,15 +56,6 @@ export default function AnalyticsPage() {
   // State for filters
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>("");
-
-  // Fetch all splits (to get templates for dropdown)
-  const { data: splits, isLoading: splitsLoading } = useQuery({
-    queryKey: ["splits"],
-    queryFn: async () => {
-      const response = await api.get<Split[]>("/splits");
-      return response.data;
-    },
-  });
 
   // Fetch all templates with their exercises
   const { data: templates, isLoading: templatesLoading } = useQuery({
@@ -142,7 +132,7 @@ export default function AnalyticsPage() {
     (e) => e.id.toString() === selectedExerciseId
   )?.name;
 
-  const isLoading = splitsLoading || templatesLoading || exercisesLoading;
+  const isLoading = templatesLoading || exercisesLoading;
 
   return (
     <div className="space-y-6">
